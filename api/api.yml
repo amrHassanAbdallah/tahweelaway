@@ -1,0 +1,323 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Tahweelaway service
+  description: Manage so many staff
+  contact:
+    name: Amr H
+    email: amr.hassan.abdullah@gmail.com
+  license:
+    name: Copyright (c) 2021 NULL
+servers:
+  - url: http://tahweelaway.svc/api/v1
+components:
+  schemas:
+
+    Error:
+      properties:
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+        - errors
+
+    NewUser:
+      properties:
+        name:
+          type: string
+          minLength: 5
+          maxLength: 256
+          description: Name of the user
+        username:
+          type: string
+          minLength: 5
+          maxLength: 260
+        email:
+          type: string
+          minLength: 60
+          maxLength: 260
+        password:
+          type: string
+          minLength: 6
+          maxLength: 260
+        currency:
+          type: string
+          enum: [ EGP ]
+      required:
+        - email
+        - name
+        - username
+        - password
+        - currency
+    NewBank:
+      properties:
+        name:
+          type: string
+          minLength: 5
+          maxLength: 256
+          enum: [ hsbc, cib, hamda]
+        branch_number:
+          type: string
+          maxLength: 260
+        account_number:
+          type: string
+          maxLength: 260
+        account_holder_name:
+          type: string
+          maxLength: 260
+        reference:
+          type: string
+          maxLength: 260
+        currency:
+          type: string
+          enum: [ EGP_ERSH ]
+        expire_at:
+          type: string
+          format: date-time
+          description: timestamp full-date - RFC3339
+      required:
+        - branch_number
+        - name
+        - currency
+        - expire_at
+        - account_number
+        - account_holder_name
+    UserResponse:
+      allOf:
+        - $ref: '#/components/schemas/NewUser'
+        - type: object
+          properties:
+            id:
+              type: string
+            balance:
+              type: integer
+            created_at:
+              type: string
+              format: date-time
+              description: timestamp full-date - RFC3339
+            updated_at:
+              type: string
+              format: date-time
+              description: timestamp full-date - RFC3339
+          required:
+            - id
+            - balance
+            - created_at
+    BankResponse:
+      allOf:
+        - $ref: '#/components/schemas/NewBank'
+        - type: object
+          properties:
+            id:
+              type: string
+            created_at:
+              type: string
+              format: date-time
+              description: timestamp full-date - RFC3339
+            updated_at:
+              type: string
+              format: date-time
+              description: timestamp full-date - RFC3339
+          required:
+            - id
+            - created_at
+            - updated_at
+    QueryBankFilters:
+      properties:
+        name:
+          type: string
+    QueryBanksBody:
+      required:
+        - filters
+        - page
+        - limit
+        - sort_by
+        - sort_direction
+      properties:
+        filters:
+          $ref: '#/components/schemas/QueryBankFilters'
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+          default: 0
+        limit:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 1000
+          default: 100
+        sort_by:
+          type: string
+          enum: [ created_at, updated_at, name ]
+          default: created_at
+        sort_direction:
+          type: string
+          enum: [ asc, desc ]
+          default: desc
+    QueryBankResponse:
+      allOf:
+        - required:
+            - data
+            - count
+            - page
+            - limit
+            - has_next
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/BankResponse'
+            count:
+              type: integer
+              format: int64
+            page:
+              type: integer
+              format: int64
+            limit:
+              type: integer
+              format: int64
+            has_next:
+              type: boolean
+
+  parameters:
+    account:
+      schema:
+        type: string
+        format: uuid
+      in: header
+      name: X-ACCOUNT
+      description: account id
+      required: true
+    requestId:
+      schema:
+        type: string
+      in: header
+      name: X-Request-Id
+      description: request Id
+      required: false
+
+paths:
+  /users:
+    post:
+      summary: Creates a new user
+      description: Creates a new user.
+      operationId: addUser
+      parameters:
+        - $ref: '#/components/parameters/requestId'
+      requestBody:
+        description: User to be added
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewUser'
+      responses:
+        '201':
+          description: user created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '409':
+          description: user write conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /users/{user_id}:
+    get:
+      summary: Get user details
+      description: Get user by id
+      operationId: getUser
+      parameters:
+        - $ref: '#/components/parameters/account'
+        - $ref: '#/components/parameters/requestId'
+        - name: user_id
+          in: path
+          description: "ID of notifier to return"
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: notifier exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          description: not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /banks/query:
+    post:
+      summary: Query banks
+      description: Query banks.
+      operationId: queryBanks
+
+      parameters:
+        - $ref: '#/components/parameters/account'
+        - $ref: '#/components/parameters/requestId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryBanksBody'
+
+      responses:
+        '200':
+          description: List of banks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryBankResponse'
+        '400':
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
