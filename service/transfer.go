@@ -18,6 +18,7 @@ func (s TahweelawayService) AddTransfer(ctx context.Context, loggedInUserID stri
 			Type:  400,
 		}
 	}
+	//todo should check the transfer limit.
 	switch transfer.Type {
 	case persistence.FROM_BANK_TO_ACCOUNT_DEPOSIT:
 		bank, err = s.handleBankToAccountTransfer(ctx, uid, transfer)

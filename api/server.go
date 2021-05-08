@@ -155,10 +155,6 @@ func (s *server) AddBank(w http.ResponseWriter, r *http.Request, params AddBankP
 	return
 }
 
-func (s *server) QueryBanks(w http.ResponseWriter, r *http.Request, params QueryBanksParams) {
-	panic("implement me")
-}
-
 func (u *NewUser) toServiceUser() (*service.User, error) {
 	return &service.User{
 		Email:    u.Email,
