@@ -122,7 +122,6 @@ components:
           required:
             - id
             - created_at
-            - updated_at
     QueryBankFilters:
       properties:
         name:
@@ -279,6 +278,49 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /banks:
+    post:
+      summary: Creates a new bank
+      description: Creates a new bank.
+      operationId: addBank
+      parameters:
+        - $ref: '#/components/parameters/requestId'
+        - $ref: '#/components/parameters/account'
+      requestBody:
+        description: Account to be added
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewBank'
+      responses:
+        '201':
+          description: user created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankResponse'
+        '409':
+          description: user write conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
   /banks/query:
     post:
       summary: Query banks

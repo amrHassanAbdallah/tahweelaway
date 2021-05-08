@@ -2,15 +2,86 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/MagalixTechnologies/kube-notifier-service/utils"
+	"fmt"
 	"github.com/amrHassanAbdallah/tahweelaway/persistence"
 	"github.com/amrHassanAbdallah/tahweelaway/service"
+	"github.com/amrHassanAbdallah/tahweelaway/utils"
 	"github.com/go-chi/render"
+	"github.com/google/uuid"
 	"net/http"
 )
 
 type server struct {
 	tahweelawayService *service.TahweelawayService
+}
+
+func (u *NewBank) toServiceBank(user_id string) (*service.Bank, error) {
+	errorMsg := "invalid bank object format"
+	jsonbody, err := json.Marshal(u)
+	if err != nil {
+		return nil, fmt.Errorf(errorMsg)
+	}
+	val := service.Bank{}
+	if err := json.Unmarshal(jsonbody, &val); err != nil {
+		return nil, fmt.Errorf(errorMsg)
+	}
+	uid, err := uuid.Parse(user_id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid X-ACCOUNT not uuid")
+	}
+	val.UserID = uid
+	return &val, nil
+}
+func (s *server) AddBank(w http.ResponseWriter, r *http.Request, params AddBankParams) {
+	ctx := r.Context()
+
+	var newbank NewBank
+	if err := json.NewDecoder(r.Body).Decode(&newbank); err != nil {
+		HandleError(w, r, &ValidationError{
+			Cause:  err,
+			Detail: nil,
+			Status: 400,
+		})
+		return
+	}
+	serviceUser, err := newbank.toServiceBank(string(params.XACCOUNT))
+	if err != nil {
+		HandleError(w, r, &ValidationError{
+			Cause:  err,
+			Detail: nil,
+			Status: http.StatusBadRequest,
+		})
+		return
+	}
+	err = utils.Validator.Struct(serviceUser)
+	if err != nil {
+		HandleError(w, r, &ValidationError{
+			Cause:  err,
+			Detail: nil,
+			Status: http.StatusBadRequest,
+		})
+		return
+	}
+	bank, err := s.tahweelawayService.AddBank(ctx, *serviceUser)
+	if err != nil {
+		switch err.(type) {
+		case *persistence.DuplicateEntityException:
+			HandleError(w, r, &service.ServiceError{
+				Cause: err,
+				Type:  http.StatusConflict,
+			})
+		default:
+			HandleError(w, r, &service.ServiceError{
+				Cause: err,
+				Type:  http.StatusInternalServerError,
+			})
+		}
+		return
+	}
+
+	render.Status(r, http.StatusCreated)
+	render.JSON(w, r, MapBankToResponse(bank))
+	return
 }
 
 func (s *server) QueryBanks(w http.ResponseWriter, r *http.Request, params QueryBanksParams) {
@@ -59,7 +130,7 @@ func (s *server) AddUser(w http.ResponseWriter, r *http.Request, params AddUserP
 	user, err := s.tahweelawayService.AddUser(ctx, *serviceUser)
 	if err != nil {
 		switch err.(type) {
-		case *persistence.UserConstraintException:
+		case *persistence.DuplicateEntityException:
 			HandleError(w, r, &service.ServiceError{
 				Cause: err,
 				Type:  http.StatusConflict,
@@ -116,6 +187,25 @@ func MapUserToResponse(user *persistence.User) UserResponse {
 		},
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: nil,
+	}
+}
+func MapBankToResponse(b *persistence.Bank) BankResponse {
+	var reference *string
+	if b.Reference.Valid {
+		reference = &b.Reference.String
+	}
+	return BankResponse{
+		NewBank: NewBank{
+			AccountHolderName: b.AccountHolderName,
+			AccountNumber:     b.AccountNumber,
+			BranchNumber:      b.BranchNumber,
+			Currency:          b.Currency,
+			ExpireAt:          b.ExpireAt,
+			Name:              b.Name,
+			Reference:         reference,
+		},
+		CreatedAt: b.CreatedAt,
+		Id:        b.ID.String(),
 	}
 }
 

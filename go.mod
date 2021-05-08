@@ -9,6 +9,8 @@ require (
 	github.com/deepmap/oapi-codegen v1.4.2
 	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/go-chi/render v1.0.1
+	github.com/go-playground/locales v0.13.0
+	github.com/go-playground/universal-translator v0.17.0
 	github.com/go-playground/validator/v10 v10.4.1
 	github.com/gofrs/uuid v3.2.0+incompatible
 	github.com/google/uuid v1.1.1

@@ -62,7 +62,24 @@ func (s *SQLStore) AddUser(ctx context.Context, user User) (*User, error) {
 	if err != nil {
 		if e, k := err.(*pq.Error); k {
 			if e.Code == "23505" {
-				err = &UserConstraintException{message: e.Message}
+				err = &DuplicateEntityException{entity: "user"}
+			}
+		}
+		/*	fmt.Printf("Type of err is %T \n", err)
+			fmt.Printf("Type of err is %#v \n", err)*/
+		return nil, err
+	}
+	return &cuser, nil
+}
+func (s *SQLStore) AddBank(ctx context.Context, bank CreateBankParams) (*Bank, error) {
+	id := uuid.New()
+	bank.ID = id
+
+	cuser, err := s.CreateBank(ctx, bank)
+	if err != nil {
+		if e, k := err.(*pq.Error); k {
+			if e.Code == "23505" {
+				err = &DuplicateEntityException{entity: "bank"}
 			}
 		}
 		/*	fmt.Printf("Type of err is %T \n", err)

@@ -47,6 +47,7 @@ ALTER TABLE "banks"
     ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 CREATE
 INDEX ON "transfers" ("type","from_id");
+CREATE UNIQUE  INDEX  ON "banks" ("user_id","name","account_holder_name","account_number");
 CREATE
 INDEX ON "transfers" ("type","to_id");
 CREATE

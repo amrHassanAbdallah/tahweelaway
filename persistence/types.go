@@ -7,14 +7,15 @@ import (
 
 type PersistenceLayerInterface interface {
 	AddUser(ctx context.Context, user User) (*User, error)
+	AddBank(ctx context.Context, bank CreateBankParams) (*Bank, error)
 	GetUser(ctx context.Context, ID string) (*User, error)
 }
-type UserConstraintException struct {
-	message string
+type DuplicateEntityException struct {
+	entity string
 }
 
-func (nc *UserConstraintException) Error() string {
-	return nc.message
+func (nc *DuplicateEntityException) Error() string {
+	return fmt.Sprintf("duplicate %s", nc.entity)
 }
 
 type InvalidIDException struct {
