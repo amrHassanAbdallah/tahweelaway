@@ -50,3 +50,12 @@ type Bank struct {
 	CreatedAt         time.Time    `json:"created_at"`
 	UpdatedAt         sql.NullTime `json:"updated_at"`
 }
+
+type Transfer struct {
+	ID        uuid.UUID `json:"id"`
+	FromID    uuid.UUID `json:"from_id"`
+	ToID      uuid.UUID `json:"to_id"`
+	Type      string    `json:"type" validate:"required,oneof=FROM_BANK_TO_ACCOUNT_DEPOSIT FROM_ACCOUNT_TO_ACCOUNT_TRANSFER"`
+	Amount    int64     `json:"amount" validate:"required,gte=10"`
+	CreatedAt time.Time `json:"created_at"`
+}

@@ -108,3 +108,76 @@ func (s *SQLStore) GetUser(ctx context.Context, ID string) (*User, error) {
 	}
 	return &cuser, nil
 }
+
+// ExecTx executes a function within a database transaction
+func (store *SQLStore) execTx(ctx context.Context, fn func(*Queries) error) error {
+	tx, err := store.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	q := New(tx)
+	err = fn(q)
+	if err != nil {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return fmt.Errorf("tx err: %v, rb err: %v", err, rbErr)
+		}
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (store *SQLStore) TransferTx(ctx context.Context, arg CreateTransferParams) (*Transfer, error) {
+	//todo pass the money currency
+	var transfer Transfer
+	err := store.execTx(ctx, func(q *Queries) error {
+		var err error
+		//todo switch on the type
+		id := uuid.New()
+		arg.ID = id
+		transfer, err = q.CreateTransfer(ctx, arg)
+		if err != nil {
+			return err
+		}
+		switch arg.Type {
+		case FROM_BANK_TO_ACCOUNT_DEPOSIT:
+			_, err = q.AddUserBalance(ctx, AddUserBalanceParams{
+				ID: arg.ToID,
+				Amount: sql.NullInt64{
+					Int64: arg.Amount * 100, //POUND to ERSH
+					Valid: true,
+				},
+			})
+			if err != nil {
+				return err
+			}
+		case FROM_ACCOUNT_TO_ACCOUNT_TRANSFER:
+			_, err = q.DeductUserBalance(ctx, DeductUserBalanceParams{
+				ID: arg.FromID,
+				Amount: sql.NullInt64{
+					Int64: arg.Amount * 100, //POUND to ERSH
+					Valid: true,
+				},
+			})
+			if err != nil {
+				return err
+			}
+			_, err = q.AddUserBalance(ctx, AddUserBalanceParams{
+				ID: arg.ToID,
+				Amount: sql.NullInt64{
+					Int64: arg.Amount * 100, //POUND to ERSH
+					Valid: true,
+				},
+			})
+			if err != nil {
+				return err
+			}
+
+		}
+
+		return err
+	})
+
+	return &transfer, err
+}

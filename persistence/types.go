@@ -5,10 +5,17 @@ import (
 	"fmt"
 )
 
+const (
+	FROM_BANK_TO_ACCOUNT_DEPOSIT     = "FROM_BANK_TO_ACCOUNT_DEPOSIT"
+	FROM_ACCOUNT_TO_ACCOUNT_TRANSFER = "FROM_ACCOUNT_TO_ACCOUNT_TRANSFER"
+)
+
 type PersistenceLayerInterface interface {
 	AddUser(ctx context.Context, user User) (*User, error)
 	AddBank(ctx context.Context, bank CreateBankParams) (*Bank, error)
 	GetUser(ctx context.Context, ID string) (*User, error)
+	GetUserBankByID(ctx context.Context, arg GetUserBankByIDParams) (Bank, error)
+	TransferTx(ctx context.Context, arg CreateTransferParams) (*Transfer, error)
 }
 type DuplicateEntityException struct {
 	entity string

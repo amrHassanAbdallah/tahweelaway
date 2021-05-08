@@ -1,10 +1,11 @@
 -- name: CreateTransfer :one
 INSERT INTO transfers (
+                       id,
                        from_id,
                        to_id,
                        amount,
                        type)
-VALUES ($1, $2, $3,$4)
+VALUES ($1, $2, $3,$4,$5)
 RETURNING *;
 
 -- name: GetTransfer :one

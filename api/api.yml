@@ -43,7 +43,7 @@ components:
           maxLength: 260
         currency:
           type: string
-          enum: [ EGP ]
+          enum: [ EGP_ERSH ]
       required:
         - email
         - name
@@ -179,7 +179,36 @@ components:
               format: int64
             has_next:
               type: boolean
-
+    NewTansfer:
+      properties:
+        from_id:
+          type: string
+        to_id:
+          type: string
+        type:
+          type: string
+          enum: [ FROM_BANK_TO_ACCOUNT_DEPOSIT, FROM_BANK_TO_ACCOUNT]
+        amount:
+          type: integer
+      required:
+        - from_id
+        - to_id
+        - type
+        - amount
+    TransferResponse:
+      allOf:
+        - $ref: '#/components/schemas/NewTansfer'
+        - type: object
+          properties:
+            id:
+              type: string
+            created_at:
+              type: string
+              format: date-time
+              description: timestamp full-date - RFC3339
+          required:
+            - id
+            - created_at
   parameters:
     account:
       schema:
@@ -319,7 +348,47 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /transfers:
+    post:
+      summary: Creates a new transfer
+      description: Creates a new transfer.
+      operationId: addTransfer
+      parameters:
+        - $ref: '#/components/parameters/requestId'
+        - $ref: '#/components/parameters/account'
+      requestBody:
+        description: Account to be added
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewTansfer'
+      responses:
+        '201':
+          description: transfer created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferResponse'
+        '409':
+          description: user write conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /banks/query:
     post:
