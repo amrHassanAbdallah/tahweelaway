@@ -1,8 +1,8 @@
 package api
 
 import (
-	"github.com/MagalixTechnologies/kube-notifier-service/service"
-	"github.com/MagalixTechnologies/kube-notifier-service/utils"
+	"github.com/amrHassanAbdallah/tahweelaway/service"
+	"github.com/amrHassanAbdallah/tahweelaway/utils"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"

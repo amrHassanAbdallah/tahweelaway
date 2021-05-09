@@ -1,9 +1,3 @@
-/*CREATE TYPE currencytype AS ENUM (
-    'EGP_ERSH'
-    );
-CREATE TYPE bank_currency_type AS ENUM (
-    'EGP'
-    );*/
 CREATE TABLE "users"
 (
     id         uuid PRIMARY KEY,

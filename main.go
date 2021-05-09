@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"flag"
-	"github.com/MagalixTechnologies/core/logger"
 	"github.com/amrHassanAbdallah/tahweelaway/api"
 	"github.com/amrHassanAbdallah/tahweelaway/persistence"
 	"github.com/amrHassanAbdallah/tahweelaway/service"
@@ -36,7 +35,7 @@ func init() {
 
 func main() {
 	var (
-		postgresURL = flag.String("mongo-host", "postgresql://root:secret@localhost:5432/tahweelaway?sslmode=disable", "DSN for postgres")
+		postgresURL = flag.String("postgresql-connection", "postgresql://root:secret@postgres:5432/tahweelaway?sslmode=disable", "DSN for postgres")
 		listen      = flag.String("listen", ":8111", "Listen specified address.")
 	)
 	flag.Parse()
@@ -74,13 +73,13 @@ func main() {
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Fatalw("server failed to start", "error", err)
+			log.Fatalw("server failed to start", "error", err)
 		}
 	}()
-	logger.Infof("server started on port %v", *listen)
+	log.Infof("server started on port %v", *listen)
 
 	<-done
-	logger.Info("server terminating...")
+	log.Info("server terminating...")
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Errorw("server terminating failed", "err", err)
 	}
